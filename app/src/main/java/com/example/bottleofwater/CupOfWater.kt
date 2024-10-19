@@ -2,7 +2,9 @@ package com.example.bottleofwater
 
 import android.graphics.Bitmap
 import android.graphics.BlurMaskFilter
-import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -17,6 +19,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -27,7 +30,6 @@ import com.example.bottleofwater.ui.theme.Grey
 import com.example.bottleofwater.ui.theme.LightWater
 import com.example.bottleofwater.ui.theme.UltraLightBlue
 import com.example.bottleofwater.ui.theme.Water
-import kotlin.math.sin
 
 @Composable
 fun CupOfWater(
@@ -37,28 +39,28 @@ fun CupOfWater(
     bottomPadding: Float = 150f,
     cupWidthDifference: Float = 60f, // difference between top and bottom of the cup
     cupHeightDifference: Float = 40f, // difference between bottom and circle of the cup
-    waveFrequency: Float = 2f, // number of waves in the water
-    waveAmplitude: Float = 80f, // height of the waves
+    dropYOffset: Animatable<Float, AnimationVector1D>
 ) {
     val infiniteTransition = rememberInfiniteTransition()
 
     val waveLightOffset = infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = (2 * Math.PI).toFloat(),
+        initialValue = 70f,
+        targetValue = 100f,
         animationSpec = infiniteRepeatable(
-            animation = tween(10000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
+            animation = tween(2500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
         )
     )
 
     val waveOffset = infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = (2 * Math.PI).toFloat(),
+        initialValue = -100f,
+        targetValue = -50f,
         animationSpec = infiniteRepeatable(
-            animation = tween(20000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
+            animation = tween(2000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
         )
     )
+
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
@@ -77,6 +79,7 @@ fun CupOfWater(
             right = cupRightX + cupWidthDifference,
             bottom = cupUpperY + cupHeightDifference
         )
+
 
         drawPath(
             path = createCupTopPath(
@@ -98,6 +101,14 @@ fun CupOfWater(
             color = Grey,
             blurRadius = 15f
         )
+        drawLine(
+            color = BottleBlue,
+            start = androidx.compose.ui.geometry.Offset(x = size.width/2, y = -200f),
+            end = androidx.compose.ui.geometry.Offset(x = size.width/2, y = dropYOffset.value+100f),
+            strokeWidth = 50f,
+            cap = StrokeCap.Round,
+            alpha = 0.5f
+        )
 
         drawPath(
             path = createWaterPath(
@@ -110,9 +121,7 @@ fun CupOfWater(
                 waterLevelHeight = waterLevelHeight,
                 cupWidth = cupWidth,
                 cupWidthDifference = cupWidthDifference,
-                waveFrequency = waveFrequency,
-                waveAmplitude = waveAmplitude,
-                waveOffset = { waveLightOffset.value }
+                waveAmplitude = waveOffset.value
             ),
             color = LightWater
         )
@@ -127,13 +136,12 @@ fun CupOfWater(
                 waterLevelHeight = waterLevelHeight,
                 cupWidth = cupWidth,
                 cupWidthDifference = cupWidthDifference,
-                waveFrequency = waveFrequency,
-                waveAmplitude = waveAmplitude,
-                waveOffset = { waveOffset.value }
+                waveAmplitude = waveLightOffset.value
             ),
             color = Water,
             alpha = 0.5f
         )
+
 
         drawPath(
             path = createCupBodyPath(
@@ -240,9 +248,7 @@ private fun createWaterPath(
     waterLevelHeight: Float,
     cupWidth: Float,
     cupWidthDifference: Float,
-    waveFrequency: Float,
     waveAmplitude: Float,
-    waveOffset: () -> Float
 ): Path{
     return Path().apply {
         // Bottom-left of the water
@@ -264,10 +270,8 @@ private fun createWaterPath(
         cubicTo(
             x1 = cupRightX + cupWidthDifference * fillPercentage(),
             y1 = waterLevelHeight,
-            x2 = centerX + (cupWidth / 2) + (cupWidthDifference * fillPercentage()) +
-                    (waveAmplitude * sin(waveFrequency * waveOffset() + 1.0f * Math.PI)).toFloat(),
-            y2 = waterLevelHeight - (cupHeightDifference * waveOffset() / 100) -
-                    (waveAmplitude * sin(waveFrequency * waveOffset())).toFloat(),
+            x2 = centerX + (cupWidth / 2) + (cupWidthDifference * fillPercentage()),
+            y2 = waterLevelHeight - waveAmplitude,
             x3 = centerX - cupWidthDifference * fillPercentage(),
             y3 = waterLevelHeight
         )
