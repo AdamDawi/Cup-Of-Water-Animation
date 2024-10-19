@@ -14,6 +14,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -39,7 +40,8 @@ fun CupOfWater(
     bottomPadding: Float = 150f,
     cupWidthDifference: Float = 60f, // difference between top and bottom of the cup
     cupHeightDifference: Float = 40f, // difference between bottom and circle of the cup
-    dropYOffset: Animatable<Float, AnimationVector1D>
+    dropYOffset: Animatable<Float, AnimationVector1D>,
+    waterLevel: MutableState<Float>,
 ) {
     val infiniteTransition = rememberInfiniteTransition()
 
@@ -73,6 +75,8 @@ fun CupOfWater(
         val cupUpperY = cupBottomY - cupHeight
         val cupRightX = centerX + cupWidth
         val waterLevelHeight = cupBottomY - (cupHeight * fillPercentage())
+        waterLevel.value = waterLevelHeight
+
         val ovalRect = Rect(
             left = centerX - cupWidthDifference,
             top = cupUpperY - cupHeightDifference,

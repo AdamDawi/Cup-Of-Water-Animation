@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -58,6 +59,9 @@ fun MainContent() {
             initialValue = -200f
         )
     }
+    val waterLevelHeight = remember {
+        mutableFloatStateOf(0f)
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -67,7 +71,8 @@ fun MainContent() {
             fillPercentage = {
                 fillPercentage.value
             },
-            dropYOffset = dropYOffset
+            dropYOffset = dropYOffset,
+            waterLevel = waterLevelHeight
         )
         Spacer(modifier = Modifier.height(20.dp))
         Text(
@@ -78,7 +83,8 @@ fun MainContent() {
         )
         AddWaterButton(
             fillPercentage = fillPercentage,
-            dropYOffset = dropYOffset
+            dropYOffset = dropYOffset,
+            waterLevelHeight = {waterLevelHeight.floatValue}
         )
     }
 }
@@ -87,7 +93,8 @@ fun MainContent() {
 @Composable
 private fun AddWaterButton(
     fillPercentage: Animatable<Float, AnimationVector1D>,
-    dropYOffset: Animatable<Float, AnimationVector1D>
+    dropYOffset: Animatable<Float, AnimationVector1D>,
+    waterLevelHeight: () -> Float
 ) {
     val lifecycleScope = rememberCoroutineScope()
 
@@ -105,7 +112,7 @@ private fun AddWaterButton(
                         if (fillPercentage.value != 0.8f) {
                             lifecycleScope.launch {
                                 dropYOffset.animateTo(
-                                    1000f,
+                                    waterLevelHeight(),
                                     animationSpec = TweenSpec(
                                         durationMillis = 500,
                                         easing = LinearEasing
