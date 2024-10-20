@@ -40,7 +40,8 @@ fun CupOfWater(
     bottomPadding: Float = 150f,
     cupWidthDifference: Float = 60f, // difference between top and bottom of the cup
     cupHeightDifference: Float = 40f, // difference between bottom and circle of the cup
-    dropYOffset: Animatable<Float, AnimationVector1D>,
+    dropEndYOffset: Animatable<Float, AnimationVector1D>,
+    dropStartYOffset: Animatable<Float, AnimationVector1D>,
     waterLevel: MutableState<Float>,
 ) {
     val infiniteTransition = rememberInfiniteTransition()
@@ -49,7 +50,7 @@ fun CupOfWater(
         initialValue = 70f,
         targetValue = 100f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2500, easing = FastOutSlowInEasing),
+            animation = tween(3000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         )
     )
@@ -58,7 +59,7 @@ fun CupOfWater(
         initialValue = -100f,
         targetValue = -50f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = FastOutSlowInEasing),
+            animation = tween(1800, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         )
     )
@@ -107,8 +108,8 @@ fun CupOfWater(
         )
         drawLine(
             color = BottleBlue,
-            start = androidx.compose.ui.geometry.Offset(x = size.width/2, y = -200f),
-            end = androidx.compose.ui.geometry.Offset(x = size.width/2, y = dropYOffset.value+100f),
+            start = androidx.compose.ui.geometry.Offset(x = size.width/2, y = dropStartYOffset.value),
+            end = androidx.compose.ui.geometry.Offset(x = size.width/2, y = dropEndYOffset.value+100f),
             strokeWidth = 50f,
             cap = StrokeCap.Round,
             alpha = 0.5f
@@ -254,6 +255,7 @@ private fun createWaterPath(
     cupWidthDifference: Float,
     waveAmplitude: Float,
 ): Path{
+    val fillPercent = fillPercentage()
     return Path().apply {
         // Bottom-left of the water
         moveTo(x = centerX, y = cupBottomY)
@@ -268,20 +270,20 @@ private fun createWaterPath(
         )
         // Right side up to water level
         lineTo(
-            x = cupRightX + cupWidthDifference * fillPercentage(),
+            x = cupRightX + cupWidthDifference * fillPercent,
             y = waterLevelHeight
         )
         cubicTo(
-            x1 = cupRightX + cupWidthDifference * fillPercentage(),
+            x1 = cupRightX + cupWidthDifference * fillPercent,
             y1 = waterLevelHeight,
-            x2 = centerX + (cupWidth / 2) + (cupWidthDifference * fillPercentage()),
+            x2 = centerX + (cupWidth / 2) + (cupWidthDifference * fillPercent),
             y2 = waterLevelHeight - waveAmplitude,
-            x3 = centerX - cupWidthDifference * fillPercentage(),
+            x3 = centerX - cupWidthDifference * fillPercent,
             y3 = waterLevelHeight
         )
         // Left side at water level
         lineTo(
-            x = centerX - cupWidthDifference * fillPercentage(),
+            x = centerX - cupWidthDifference * fillPercent,
             y = waterLevelHeight
         )
     }

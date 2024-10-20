@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -45,7 +46,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             BottleOfWaterTheme {
                 MainContent()
-
             }
         }
     }
@@ -54,7 +54,13 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainContent() {
     val fillPercentage = remember { Animatable(0.5f) }
-    val dropYOffset = remember {
+    val dropEndYOffset = remember {
+        Animatable(
+            initialValue = -200f
+        )
+    }
+
+    val dropStartYOffset = remember {
         Animatable(
             initialValue = -200f
         )
@@ -71,8 +77,9 @@ fun MainContent() {
             fillPercentage = {
                 fillPercentage.value
             },
-            dropYOffset = dropYOffset,
-            waterLevel = waterLevelHeight
+            dropEndYOffset = dropEndYOffset,
+            waterLevel = waterLevelHeight,
+            dropStartYOffset = dropStartYOffset
         )
         Spacer(modifier = Modifier.height(20.dp))
         Text(
@@ -83,8 +90,9 @@ fun MainContent() {
         )
         AddWaterButton(
             fillPercentage = fillPercentage,
-            dropYOffset = dropYOffset,
-            waterLevelHeight = {waterLevelHeight.floatValue}
+            dropEndYOffset = dropEndYOffset,
+            waterLevelHeight = {waterLevelHeight.floatValue},
+            dropStartYOffset = dropStartYOffset
         )
     }
 }
@@ -93,11 +101,12 @@ fun MainContent() {
 @Composable
 private fun AddWaterButton(
     fillPercentage: Animatable<Float, AnimationVector1D>,
-    dropYOffset: Animatable<Float, AnimationVector1D>,
+    dropEndYOffset: Animatable<Float, AnimationVector1D>,
+    dropStartYOffset: Animatable<Float, AnimationVector1D>,
     waterLevelHeight: () -> Float
 ) {
     val lifecycleScope = rememberCoroutineScope()
-
+    val isButtonEnabled = remember { mutableStateOf(true) }
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -108,30 +117,38 @@ private fun AddWaterButton(
                 .background(BottleBlue, shape = RoundedCornerShape(12.dp))
                 .clip(RoundedCornerShape(12.dp))
                 .clickable(
+                    enabled = isButtonEnabled.value,
                     onClick = {
                         if (fillPercentage.value != 0.8f) {
+                            isButtonEnabled.value = false
                             lifecycleScope.launch {
-                                dropYOffset.animateTo(
+                                dropEndYOffset.animateTo(
                                     waterLevelHeight(),
                                     animationSpec = TweenSpec(
                                         durationMillis = 500,
                                         easing = LinearEasing
                                     )
                                 )
-                                fillPercentage.animateTo(
-                                    (fillPercentage.value + 0.05f).coerceAtMost(maximumValue = 0.8f),
+                                launch{
+                                    fillPercentage.animateTo(
+                                        (fillPercentage.value + 0.05f).coerceAtMost(maximumValue = 0.8f),
+                                        animationSpec = TweenSpec(
+                                            durationMillis = 500,
+                                            easing = LinearEasing
+                                        )
+                                    )
+                                }
+                                dropStartYOffset.animateTo(
+                                    waterLevelHeight(),
                                     animationSpec = TweenSpec(
                                         durationMillis = 500,
-                                        easing = LinearEasing
-                                    )
-                                )
-                                dropYOffset.animateTo(
-                                    -200f,
-                                    animationSpec = TweenSpec(
-                                        durationMillis = 700,
                                         easing = EaseInSine
                                     )
                                 )
+                                // reset animation
+                                dropEndYOffset.snapTo(-200f)
+                                dropStartYOffset.snapTo(-200f)
+                                isButtonEnabled.value = true
                             }
                         }
                     },
